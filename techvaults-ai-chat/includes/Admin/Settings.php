@@ -35,9 +35,44 @@ class Settings {
 		}
 
 		$summary = ( new EventRepository() )->weeklySummary();
+		$kbCount = wp_count_posts( 'tva_kb_entry' )->publish ?? 0;
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'TechVaults Chat — Settings', 'tva-chat' ); ?></h1>
+
+			<?php if ( (int) $kbCount === 0 ) : ?>
+				<div class="notice notice-error">
+					<p>
+						<strong><?php esc_html_e( 'Knowledge Base is empty.', 'tva-chat' ); ?></strong>
+						<?php esc_html_e( 'The chatbot cannot answer questions until you add KB entries.', 'tva-chat' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=tva_kb_entry' ) ); ?>">
+							<?php esc_html_e( 'Add your first entry →', 'tva-chat' ); ?>
+						</a>
+					</p>
+				</div>
+			<?php elseif ( (int) $kbCount < 5 ) : ?>
+				<div class="notice notice-warning">
+					<p>
+						<?php
+						printf(
+							esc_html__( 'Knowledge Base has %d entries. Add at least 5 for reliable responses.', 'tva-chat' ),
+							(int) $kbCount
+						);
+						?>
+					</p>
+				</div>
+			<?php else : ?>
+				<div class="notice notice-success inline">
+					<p>
+						<?php
+						printf(
+							esc_html__( '✓ Knowledge Base: %d entries ready.', 'tva-chat' ),
+							(int) $kbCount
+						);
+						?>
+					</p>
+				</div>
+			<?php endif; ?>
 
 			<form method="post" action="options.php">
 				<?php settings_fields( 'tva_chat_settings' ); ?>
@@ -83,14 +118,25 @@ class Settings {
 							<label for="tva_llm_model"><?php esc_html_e( 'Model', 'tva-chat' ); ?></label>
 						</th>
 						<td>
-							<input
-								type="text"
-								id="tva_llm_model"
-								name="tva_chat_llm_model"
-								value="<?php echo esc_attr( Config::llmModel() ); ?>"
-								style="width:300px"
-							/>
-							<p class="description">e.g. gemini-1.5-flash, gemini-1.5-pro</p>
+							<?php
+							$current_model = Config::llmModel();
+							$models = [
+								'gemini-2.0-flash'        => 'Gemini 2.0 Flash (recommended — fast, free tier)',
+								'gemini-2.0-flash-lite'   => 'Gemini 2.0 Flash Lite (fastest, lowest cost)',
+								'gemini-1.5-flash-latest' => 'Gemini 1.5 Flash Latest',
+								'gemini-1.5-pro-latest'   => 'Gemini 1.5 Pro Latest (slower, more capable)',
+							];
+							?>
+							<select id="tva_llm_model" name="tva_chat_llm_model" style="width:400px">
+								<?php foreach ( $models as $value => $label ) : ?>
+									<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current_model, $value ); ?>>
+										<?php echo esc_html( $label ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description">
+								<?php esc_html_e( 'gemini-2.0-flash is the recommended default — fast responses, generous free quota.', 'tva-chat' ); ?>
+							</p>
 						</td>
 					</tr>
 

@@ -26,7 +26,7 @@ final class Config {
 	}
 
 	public static function llmModel(): string {
-		return (string) get_option( 'tva_chat_llm_model', 'gemini-1.5-flash' );
+		return (string) get_option( 'tva_chat_llm_model', 'gemini-2.0-flash' );
 	}
 
 	public static function llmMaxTokens(): int {
