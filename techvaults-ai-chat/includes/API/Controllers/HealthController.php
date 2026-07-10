@@ -82,8 +82,8 @@ class HealthController {
 
 	// ── Gemini connectivity test ───────────────────────────────────────────────
 
-	private static function pingGemini( string $apiKey, string $model ): string {
-		$url  = sprintf(
+	private static function pingGemini( string $apiKey, string $model ): array {
+		$url = sprintf(
 			'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
 			rawurlencode( $model ),
 			rawurlencode( $apiKey )
@@ -101,25 +101,61 @@ class HealthController {
 			] ),
 		] );
 
+		// ── WP HTTP layer error (DNS, timeout, SSL, etc.) ─────────────────────
 		if ( is_wp_error( $response ) ) {
-			Logger::error( 'Health check Gemini ping failed.', [ 'error' => $response->get_error_message() ] );
-			return 'ERROR — ' . $response->get_error_message();
+			$msg = $response->get_error_message();
+			Logger::error( 'Health: Gemini ping WP_Error.', [ 'error' => $msg ] );
+			return [
+				'result'     => 'ERROR',
+				'stage'      => 'wp_http',
+				'detail'     => $msg,
+				'suggestion' => 'Your server cannot reach generativelanguage.googleapis.com. Check outbound HTTPS firewall rules or contact your host.',
+			];
 		}
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
+		$raw  = wp_remote_retrieve_body( $response );
+		$decoded = json_decode( $raw, true );
+
+		// ── Non-200 from Gemini API ────────────────────────────────────────────
 		if ( $code !== 200 ) {
-			$body = wp_remote_retrieve_body( $response );
-			Logger::error( 'Health check Gemini ping non-200.', [ 'status' => $code, 'body' => $body ] );
-			return "ERROR — HTTP {$code}: " . substr( $body, 0, 120 );
+			$geminiMsg = $decoded['error']['message'] ?? $raw;
+			$geminiStatus = $decoded['error']['status'] ?? '';
+			Logger::error( 'Health: Gemini ping non-200.', [ 'status' => $code, 'gemini_status' => $geminiStatus, 'detail' => $geminiMsg ] );
+
+			$suggestion = match ( $code ) {
+				400 => 'Bad request — model name may be wrong. Try "gemini-1.5-flash".',
+				401, 403 => 'API key is invalid, expired, or the Generative Language API is not enabled in your Google Cloud project.',
+				404 => 'Model not found. Confirm the model name at https://ai.google.dev/gemini-api/docs/models',
+				429 => 'Quota exceeded. Wait 60 seconds and try again, or upgrade your Google AI Studio plan.',
+				500, 503 => 'Gemini service error — not your fault. Retry in a few minutes.',
+				default => 'Unexpected error. See detail above.',
+			};
+
+			return [
+				'result'        => 'ERROR',
+				'stage'         => 'gemini_api',
+				'http_status'   => $code,
+				'gemini_status' => $geminiStatus,
+				'detail'        => $geminiMsg,
+				'suggestion'    => $suggestion,
+			];
 		}
 
-		$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
-		$reply   = $decoded['candidates'][0]['content']['parts'][0]['text'] ?? null;
-
-		if ( $reply ) {
-			return 'OK — Gemini responded: ' . trim( $reply );
+		// ── 200 but unexpected body structure ─────────────────────────────────
+		$reply = $decoded['candidates'][0]['content']['parts'][0]['text'] ?? null;
+		if ( empty( $reply ) ) {
+			return [
+				'result'     => 'WARN',
+				'stage'      => 'parse',
+				'detail'     => 'Gemini returned 200 but response body had unexpected structure.',
+				'raw_sample' => substr( $raw, 0, 300 ),
+			];
 		}
 
-		return 'WARN — Gemini returned 200 but response structure was unexpected.';
+		return [
+			'result' => 'OK',
+			'reply'  => trim( $reply ),
+		];
 	}
 }
