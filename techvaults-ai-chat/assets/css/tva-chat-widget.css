@@ -1,0 +1,259 @@
+/* ==========================================================================
+   TechVaults AI Chat Widget
+   Colours: #005BEA (TechVaults blue), #BC0004 (TechVaults red accent)
+   ========================================================================== */
+
+/* ── Launcher button ────────────────────────────────────────────────────── */
+#tva-chat-launcher {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #005BEA;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#tva-chat-launcher:hover,
+#tva-chat-launcher:focus-visible {
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+/* ── Chat panel ─────────────────────────────────────────────────────────── */
+#tva-chat-panel {
+  position: fixed;
+  bottom: 96px;
+  right: 24px;
+  z-index: 9999;
+  width: 340px;
+  max-width: 92vw;
+  height: 460px;
+  max-height: 70vh;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+}
+
+#tva-chat-panel[hidden] {
+  display: none;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+#tva-chat-header {
+  background: #005BEA;
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+#tva-chat-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+#tva-chat-close:hover,
+#tva-chat-close:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+  outline: 2px solid #fff;
+}
+
+/* ── Messages area ──────────────────────────────────────────────────────── */
+#tva-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  scroll-behavior: smooth;
+}
+
+.tva-msg {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  max-width: 80%;
+  font-size: 14px;
+  line-height: 1.45;
+  word-wrap: break-word;
+}
+
+.tva-msg-user {
+  background: #005BEA;
+  color: #fff;
+  margin-left: auto;
+  border-bottom-right-radius: 2px;
+}
+
+.tva-msg-bot {
+  background: #F2F2F2;
+  color: #111;
+  border-bottom-left-radius: 2px;
+}
+
+.tva-typing {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* ── Lead capture form ──────────────────────────────────────────────────── */
+.tva-lead-form {
+  background: #FFF7E6;
+  border: 1px solid #FFD98C;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.tva-lead-form p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #333;
+}
+
+.tva-lead-form input {
+  display: block;
+  width: 100%;
+  margin: 6px 0;
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.tva-lead-form input:focus {
+  outline: 2px solid #005BEA;
+  border-color: #005BEA;
+}
+
+.tva-lead-form button {
+  background: #BC0004;
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.tva-lead-form button:hover {
+  background: #9a0003;
+}
+
+.tva-lead-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Input form ─────────────────────────────────────────────────────────── */
+#tva-chat-form {
+  display: flex;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+#tva-chat-input {
+  flex: 1;
+  border: none;
+  padding: 12px 14px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+
+#tva-chat-input:focus {
+  background: #f9f9f9;
+}
+
+#tva-chat-form button[type="submit"] {
+  background: #005BEA;
+  color: #fff;
+  border: none;
+  padding: 0 18px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.15s;
+}
+
+#tva-chat-form button[type="submit"]:hover {
+  background: #004abf;
+}
+
+#tva-chat-form button[type="submit"]:focus-visible {
+  outline: 2px solid #005BEA;
+  outline-offset: -2px;
+}
+
+/* ── WhatsApp link ──────────────────────────────────────────────────────── */
+#tva-chat-whatsapp {
+  display: block;
+  text-align: center;
+  padding: 9px 16px;
+  font-size: 12px;
+  color: #075E54;
+  text-decoration: none;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+#tva-chat-whatsapp:hover {
+  background: #f0faf8;
+  text-decoration: underline;
+}
+
+/* ── Screen-reader only utility ─────────────────────────────────────────── */
+.tva-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  #tva-chat-launcher {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  #tva-chat-panel {
+    right: 12px;
+    left: 12px;
+    bottom: 84px;
+    width: auto;
+    max-width: 100%;
+    height: 420px;
+  }
+}

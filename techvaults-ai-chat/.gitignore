@@ -1,0 +1,29 @@
+# ── Secrets — never commit these ──────────────────────────────────────────────
+.env
+.env.*
+*.secret
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Editors ───────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Node (if tooling is added later) ──────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Build artefacts ───────────────────────────────────────────────────────────
+/dist/
+/build/
+*.zip
+
+# ── Composer (if added later) ─────────────────────────────────────────────────
+/vendor/
