@@ -26,7 +26,23 @@ final class Config {
 	}
 
 	public static function llmModel(): string {
-		return (string) get_option( 'tva_chat_llm_model', 'gemini-2.0-flash' );
+		$stored = (string) get_option( 'tva_chat_llm_model', '' );
+
+		// Correct deprecated model names that may be stored from previous versions.
+		$deprecated = [
+			'gemini-1.5-flash'     => 'gemini-2.0-flash',
+			'gemini-1.5-pro'       => 'gemini-1.5-pro-latest',
+			'gemini-pro'           => 'gemini-2.0-flash',
+			'gemini-1.0-pro'       => 'gemini-2.0-flash',
+		];
+
+		if ( isset( $deprecated[ $stored ] ) ) {
+			$corrected = $deprecated[ $stored ];
+			update_option( 'tva_chat_llm_model', $corrected );
+			return $corrected;
+		}
+
+		return $stored ?: 'gemini-2.0-flash';
 	}
 
 	public static function llmMaxTokens(): int {
