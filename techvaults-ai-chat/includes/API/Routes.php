@@ -13,9 +13,10 @@ declare( strict_types=1 );
 
 namespace TechVaults\Chat\API;
 
-use TechVaults\Chat\API\Controllers\ChatController;
-use TechVaults\Chat\API\Controllers\LeadController;
 use TechVaults\Chat\API\Controllers\AnalyticsController;
+use TechVaults\Chat\API\Controllers\ChatController;
+use TechVaults\Chat\API\Controllers\HealthController;
+use TechVaults\Chat\API\Controllers\LeadController;
 
 class Routes {
 
@@ -29,6 +30,7 @@ class Routes {
 		$chat      = new ChatController();
 		$lead      = new LeadController();
 		$analytics = new AnalyticsController();
+		$health    = new HealthController();
 
 		// ── Chat ──────────────────────────────────────────────────────────────
 		register_rest_route( self::NAMESPACE, '/message', [
@@ -49,6 +51,13 @@ class Routes {
 			'methods'             => \WP_REST_Server::CREATABLE,
 			'callback'            => [ $analytics, 'handle' ],
 			'permission_callback' => '__return_true',
+		] );
+
+		// ── Health check (admin only) ─────────────────────────────────────────
+		register_rest_route( self::NAMESPACE, '/health', [
+			'methods'             => \WP_REST_Server::READABLE,
+			'callback'            => [ $health, 'handle' ],
+			'permission_callback' => '__return_true', // Auth enforced inside handle().
 		] );
 	}
 }
