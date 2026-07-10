@@ -1,234 +1,630 @@
-/* ==========================================================================
+/* =============================================================================
    TechVaults AI Chat Widget
-   Colours: #005BEA (TechVaults blue), #BC0004 (TechVaults red accent)
-   ========================================================================== */
+   Design system: CSS custom properties → every colour/radius/shadow is
+   overridable from a parent stylesheet with zero !important hacks.
+   Brand: #bc0004 (red) · #ffffff (white) · #111111 (black)
+   ============================================================================= */
 
-/* ── Launcher button ────────────────────────────────────────────────────── */
+/* ── Design tokens ────────────────────────────────────────────────────────── */
+:root {
+  --tva-primary:        #bc0004;
+  --tva-primary-dark:   #950003;
+  --tva-primary-light:  #d4000499;   /* 60% opacity for glow */
+  --tva-on-primary:     #ffffff;
+
+  --tva-surface:        #ffffff;
+  --tva-surface-2:      #f7f7f8;
+  --tva-surface-3:      #f0f0f1;
+  --tva-border:         rgba(0,0,0,.08);
+
+  --tva-text-primary:   #111111;
+  --tva-text-secondary: #555555;
+  --tva-text-muted:     #999999;
+
+  --tva-bot-bubble:     #f2f2f3;
+  --tva-bot-text:       #111111;
+  --tva-user-bubble:    #bc0004;
+  --tva-user-text:      #ffffff;
+
+  --tva-whatsapp:       #25d366;
+  --tva-whatsapp-dark:  #1ea952;
+
+  --tva-radius-panel:   16px;
+  --tva-radius-bubble:  18px;
+  --tva-radius-btn:     50px;
+
+  --tva-shadow-launcher: 0 4px 20px rgba(188,0,4,.35), 0 2px 8px rgba(0,0,0,.15);
+  --tva-shadow-panel:    0 12px 48px rgba(0,0,0,.18), 0 2px 12px rgba(0,0,0,.10);
+
+  --tva-z: 2147483647; /* max z-index — sits above everything */
+
+  /* Animation */
+  --tva-ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --tva-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Reset — scope all styles to #tva-chat-root ──────────────────────────── */
+#tva-chat-root *,
+#tva-chat-root *::before,
+#tva-chat-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Launcher button ─────────────────────────────────────────────────────── */
 #tva-chat-launcher {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 9999;
-  width: 56px;
-  height: 56px;
+  bottom: 28px;
+  right: 28px;
+  z-index: var(--tva-z);
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   border: none;
-  background: #005BEA;
-  color: #fff;
-  font-size: 24px;
+  background: var(--tva-primary);
+  color: var(--tva-on-primary);
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--tva-shadow-launcher);
+  transition:
+    transform 0.25s var(--tva-ease-out-back),
+    box-shadow 0.2s var(--tva-ease-standard);
+  outline: none;
 }
 
-#tva-chat-launcher:hover,
-#tva-chat-launcher:focus-visible {
+/* Launcher icon — two states toggled via .is-open class on root */
+#tva-chat-launcher .tva-icon-open,
+#tva-chat-launcher .tva-icon-close {
+  position: absolute;
+  transition: opacity 0.2s, transform 0.3s var(--tva-ease-out-back);
+  pointer-events: none;
+  line-height: 1;
+}
+#tva-chat-launcher .tva-icon-open  { opacity: 1; transform: rotate(0deg) scale(1); font-size: 26px; }
+#tva-chat-launcher .tva-icon-close { opacity: 0; transform: rotate(-90deg) scale(0.7); font-size: 22px; }
+
+#tva-chat-root.is-open #tva-chat-launcher .tva-icon-open  { opacity: 0; transform: rotate(90deg) scale(0.7); }
+#tva-chat-root.is-open #tva-chat-launcher .tva-icon-close { opacity: 1; transform: rotate(0deg) scale(1); }
+
+#tva-chat-launcher:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-  outline: 3px solid #fff;
-  outline-offset: 2px;
+  box-shadow: 0 6px 28px rgba(188,0,4,.45), 0 2px 10px rgba(0,0,0,.2);
+}
+#tva-chat-launcher:focus-visible {
+  outline: 3px solid var(--tva-on-primary);
+  outline-offset: 3px;
+}
+#tva-chat-launcher:active { transform: scale(0.96); }
+
+/* Unread badge — shown before first open */
+#tva-chat-launcher .tva-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--tva-primary);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--tva-primary);
+  animation: tva-pop 0.4s var(--tva-ease-out-back) both;
 }
 
-/* ── Chat panel ─────────────────────────────────────────────────────────── */
+/* Pulse ring on launcher before first interaction */
+#tva-chat-launcher::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--tva-primary-light);
+  opacity: 0;
+  animation: tva-pulse 2.4s ease-out 1.5s infinite;
+}
+#tva-chat-root.is-open #tva-chat-launcher::before,
+#tva-chat-root.has-opened #tva-chat-launcher::before {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes tva-pulse {
+  0%   { transform: scale(1);    opacity: 0.7; }
+  100% { transform: scale(1.8);  opacity: 0;   }
+}
+
+/* ── Chat panel ──────────────────────────────────────────────────────────── */
 #tva-chat-panel {
   position: fixed;
-  bottom: 96px;
-  right: 24px;
-  z-index: 9999;
-  width: 340px;
-  max-width: 92vw;
-  height: 460px;
-  max-height: 70vh;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  bottom: 104px;
+  right: 28px;
+  z-index: var(--tva-z);
+  width: 370px;
+  max-width: calc(100vw - 32px);
+  height: 540px;
+  max-height: calc(100vh - 130px);
+  background: var(--tva-surface);
+  border-radius: var(--tva-radius-panel);
+  box-shadow: var(--tva-shadow-panel);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 14px;
+  border: 1px solid var(--tva-border);
+
+  /* Entry animation */
+  transform-origin: bottom right;
+  transform: scale(0.85) translateY(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.32s var(--tva-ease-out-back),
+    opacity   0.22s var(--tva-ease-standard);
 }
 
-#tva-chat-panel[hidden] {
-  display: none;
+#tva-chat-root.is-open #tva-chat-panel {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
-/* ── Header ─────────────────────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────────────────── */
 #tva-chat-header {
-  background: #005BEA;
-  color: #fff;
-  padding: 12px 16px;
+  background: var(--tva-primary);
+  padding: 14px 16px 12px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-weight: bold;
+  gap: 10px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle diagonal shine on the header */
+#tva-chat-header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.tva-header-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Online status dot */
+.tva-header-avatar::after {
+  content: '';
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid var(--tva-primary);
+}
+
+.tva-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tva-header-name {
+  color: var(--tva-on-primary);
   font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tva-header-status {
+  color: rgba(255,255,255,.75);
+  font-size: 11.5px;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tva-header-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
   flex-shrink: 0;
 }
 
 #tva-chat-close {
-  background: none;
+  background: rgba(255,255,255,.15);
   border: none;
-  color: #fff;
-  font-size: 22px;
-  line-height: 1;
+  color: var(--tva-on-primary);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 0 4px;
-  border-radius: 4px;
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  position: relative;
+  z-index: 1;
 }
+#tva-chat-close:hover    { background: rgba(255,255,255,.28); }
+#tva-chat-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
-#tva-chat-close:hover,
-#tva-chat-close:focus-visible {
-  background: rgba(255, 255, 255, 0.2);
-  outline: 2px solid #fff;
-}
-
-/* ── Messages area ──────────────────────────────────────────────────────── */
+/* ── Messages area ───────────────────────────────────────────────────────── */
 #tva-chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 16px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   scroll-behavior: smooth;
+  background: var(--tva-surface);
 }
 
-.tva-msg {
-  margin-bottom: 10px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  max-width: 80%;
-  font-size: 14px;
-  line-height: 1.45;
-  word-wrap: break-word;
+/* Custom scrollbar */
+#tva-chat-messages::-webkit-scrollbar { width: 4px; }
+#tva-chat-messages::-webkit-scrollbar-track { background: transparent; }
+#tva-chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,.12);
+  border-radius: 4px;
 }
 
-.tva-msg-user {
-  background: #005BEA;
+/* ── Message bubbles ─────────────────────────────────────────────────────── */
+.tva-msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  animation: tva-msg-in 0.22s var(--tva-ease-out-back) both;
+}
+.tva-msg-row.tva-row-user  { flex-direction: row-reverse; }
+.tva-msg-row.tva-row-bot   { flex-direction: row; }
+
+@keyframes tva-msg-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Bot avatar in message stream */
+.tva-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--tva-primary);
   color: #fff;
-  margin-left: auto;
-  border-bottom-right-radius: 2px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+/* Only show avatar on first message in a bot group — JS adds .tva-hide-avatar */
+.tva-msg-row.tva-hide-avatar .tva-msg-avatar { visibility: hidden; }
+
+.tva-msg-bubble {
+  max-width: 76%;
+  padding: 9px 13px;
+  border-radius: var(--tva-radius-bubble);
+  font-size: 14px;
+  line-height: 1.48;
+  word-wrap: break-word;
+  position: relative;
 }
 
-.tva-msg-bot {
-  background: #F2F2F2;
-  color: #111;
-  border-bottom-left-radius: 2px;
+/* Bot bubble */
+.tva-row-bot .tva-msg-bubble {
+  background: var(--tva-bot-bubble);
+  color: var(--tva-bot-text);
+  border-bottom-left-radius: 5px;
 }
 
-.tva-typing {
-  opacity: 0.6;
-  font-style: italic;
+/* User bubble */
+.tva-row-user .tva-msg-bubble {
+  background: var(--tva-user-bubble);
+  color: var(--tva-user-text);
+  border-bottom-right-radius: 5px;
 }
 
-/* ── Lead capture form ──────────────────────────────────────────────────── */
-.tva-lead-form {
-  background: #FFF7E6;
-  border: 1px solid #FFD98C;
-  border-radius: 8px;
-  padding: 10px 12px;
+/* Timestamp — visible on hover */
+.tva-msg-time {
+  font-size: 10.5px;
+  color: var(--tva-text-muted);
+  margin-top: 3px;
+  padding: 0 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+.tva-msg-row:hover .tva-msg-time { opacity: 1; }
+
+/* Date separator */
+.tva-date-separator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 6px;
+  color: var(--tva-text-muted);
+  font-size: 11px;
+}
+.tva-date-separator::before,
+.tva-date-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--tva-border);
+}
+
+/* ── Typing indicator ────────────────────────────────────────────────────── */
+.tva-typing-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  animation: tva-msg-in 0.22s var(--tva-ease-out-back) both;
+}
+
+.tva-typing-bubble {
+  background: var(--tva-bot-bubble);
+  border-radius: var(--tva-radius-bubble);
+  border-bottom-left-radius: 5px;
+  padding: 12px 16px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.tva-typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tva-text-muted);
+  animation: tva-bounce 1.2s infinite ease-in-out;
+}
+.tva-typing-dot:nth-child(1) { animation-delay: 0s;    }
+.tva-typing-dot:nth-child(2) { animation-delay: 0.18s; }
+.tva-typing-dot:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes tva-bounce {
+  0%, 60%, 100% { transform: translateY(0);    opacity: 0.4; }
+  30%            { transform: translateY(-5px); opacity: 1;   }
+}
+
+/* ── Quick replies ───────────────────────────────────────────────────────── */
+#tva-chat-quickreplies {
+  padding: 0 14px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tva-quick-reply {
+  background: var(--tva-surface);
+  color: var(--tva-primary);
+  border: 1.5px solid var(--tva-primary);
+  border-radius: var(--tva-radius-btn);
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.12s;
+  white-space: nowrap;
+  animation: tva-pop 0.3s var(--tva-ease-out-back) both;
+}
+.tva-quick-reply:nth-child(1) { animation-delay: 0.05s; }
+.tva-quick-reply:nth-child(2) { animation-delay: 0.10s; }
+.tva-quick-reply:nth-child(3) { animation-delay: 0.15s; }
+.tva-quick-reply:nth-child(4) { animation-delay: 0.20s; }
+
+.tva-quick-reply:hover {
+  background: var(--tva-primary);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.tva-quick-reply:active  { transform: scale(0.96); }
+.tva-quick-reply:focus-visible { outline: 2px solid var(--tva-primary); outline-offset: 2px; }
+
+@keyframes tva-pop {
+  from { opacity: 0; transform: scale(0.85) translateY(6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+
+/* ── Lead capture form ───────────────────────────────────────────────────── */
+.tva-lead-card {
+  margin: 4px 0;
+  background: linear-gradient(135deg, #fff9f9 0%, #fff5f5 100%);
+  border: 1.5px solid rgba(188,0,4,.18);
+  border-radius: 14px;
+  padding: 14px;
+  animation: tva-msg-in 0.25s var(--tva-ease-out-back) both;
+  width: 100%;
+}
+
+.tva-lead-card p {
+  font-size: 13px;
+  color: var(--tva-text-primary);
+  line-height: 1.45;
   margin-bottom: 10px;
 }
 
-.tva-lead-form p {
-  margin: 0 0 8px;
-  font-size: 13px;
-  line-height: 1.4;
-  color: #333;
-}
-
-.tva-lead-form input {
+.tva-lead-field {
   display: block;
   width: 100%;
-  margin: 6px 0;
-  padding: 7px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 9px 12px;
+  margin-bottom: 8px;
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
   font-size: 13px;
-  box-sizing: border-box;
+  color: var(--tva-text-primary);
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.tva-lead-field:focus {
+  border-color: var(--tva-primary);
+  box-shadow: 0 0 0 3px rgba(188,0,4,.10);
+}
+.tva-lead-field.tva-error {
+  border-color: var(--tva-primary);
+  background: #fff8f8;
 }
 
-.tva-lead-form input:focus {
-  outline: 2px solid #005BEA;
-  border-color: #005BEA;
-}
-
-.tva-lead-form button {
-  background: #BC0004;
+.tva-lead-submit {
+  width: 100%;
+  padding: 10px;
+  background: var(--tva-primary);
   color: #fff;
   border: none;
-  padding: 7px 16px;
-  border-radius: 6px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 13px;
-  margin-top: 4px;
+  transition: background 0.15s, transform 0.12s;
+  letter-spacing: 0.02em;
 }
+.tva-lead-submit:hover:not(:disabled)  { background: var(--tva-primary-dark); transform: translateY(-1px); }
+.tva-lead-submit:active:not(:disabled) { transform: scale(0.98); }
+.tva-lead-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.tva-lead-form button:hover {
-  background: #9a0003;
-}
-
-.tva-lead-form button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* ── Input form ─────────────────────────────────────────────────────────── */
+/* ── Input form ──────────────────────────────────────────────────────────── */
 #tva-chat-form {
   display: flex;
-  border-top: 1px solid #eee;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--tva-border);
+  background: var(--tva-surface);
   flex-shrink: 0;
 }
 
 #tva-chat-input {
   flex: 1;
-  border: none;
-  padding: 12px 14px;
-  font-size: 14px;
-  outline: none;
-  background: #fff;
-}
-
-#tva-chat-input:focus {
-  background: #f9f9f9;
-}
-
-#tva-chat-form button[type="submit"] {
-  background: #005BEA;
-  color: #fff;
-  border: none;
-  padding: 0 18px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background 0.15s;
-}
-
-#tva-chat-form button[type="submit"]:hover {
-  background: #004abf;
-}
-
-#tva-chat-form button[type="submit"]:focus-visible {
-  outline: 2px solid #005BEA;
-  outline-offset: -2px;
-}
-
-/* ── WhatsApp link ──────────────────────────────────────────────────────── */
-#tva-chat-whatsapp {
-  display: block;
-  text-align: center;
+  border: 1.5px solid transparent;
+  background: var(--tva-surface-2);
+  border-radius: 22px;
   padding: 9px 16px;
-  font-size: 12px;
-  color: #075E54;
-  text-decoration: none;
-  border-top: 1px solid #eee;
+  font-size: 13.5px;
+  color: var(--tva-text-primary);
+  outline: none;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  min-width: 0;
+}
+#tva-chat-input:focus {
+  border-color: var(--tva-primary);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(188,0,4,.08);
+}
+#tva-chat-input::placeholder { color: var(--tva-text-muted); }
+
+#tva-chat-send {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: var(--tva-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(188,0,4,.3);
+}
+#tva-chat-send:hover  { background: var(--tva-primary-dark); transform: scale(1.08); }
+#tva-chat-send:active { transform: scale(0.93); }
+#tva-chat-send:focus-visible { outline: 2px solid var(--tva-primary); outline-offset: 3px; }
+
+/* Send icon SVG */
+#tva-chat-send svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: translateX(1px); /* optical centre */
 }
 
+/* Disabled state while waiting for response */
+#tva-chat-send:disabled {
+  background: #ccc;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Footer — WhatsApp link ──────────────────────────────────────────────── */
+#tva-chat-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px 10px;
+  background: var(--tva-surface);
+  border-top: 1px solid var(--tva-border);
+  flex-shrink: 0;
+}
+
+#tva-chat-whatsapp {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tva-whatsapp-dark);
+  text-decoration: none;
+  padding: 5px 12px;
+  border-radius: var(--tva-radius-btn);
+  border: 1.5px solid rgba(37,211,102,.35);
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
 #tva-chat-whatsapp:hover {
-  background: #f0faf8;
-  text-decoration: underline;
+  background: rgba(37,211,102,.08);
+  border-color: var(--tva-whatsapp);
+}
+#tva-chat-whatsapp:focus-visible { outline: 2px solid var(--tva-whatsapp); outline-offset: 2px; }
+
+/* WhatsApp icon */
+#tva-chat-whatsapp svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--tva-whatsapp);
+  flex-shrink: 0;
 }
 
-/* ── Screen-reader only utility ─────────────────────────────────────────── */
+/* ── Screen-reader utility ───────────────────────────────────────────────── */
 .tva-sr-only {
   position: absolute;
   width: 1px;
@@ -236,24 +632,52 @@
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip: rect(0,0,0,0);
   white-space: nowrap;
   border: 0;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────────── */
+/* ── Responsive — mobile ─────────────────────────────────────────────────── */
 @media (max-width: 480px) {
   #tva-chat-launcher {
-    bottom: 16px;
+    bottom: 20px;
     right: 16px;
   }
 
   #tva-chat-panel {
-    right: 12px;
-    left: 12px;
-    bottom: 84px;
-    width: auto;
+    /* Full-width panel with safe-area support for notched phones */
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
     max-width: 100%;
-    height: 420px;
+    border-radius: var(--tva-radius-panel) var(--tva-radius-panel) 0 0;
+    height: 70vh;
+    max-height: 70vh;
+    transform-origin: bottom center;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  /* On mobile, panel slides up instead of scaling */
+  #tva-chat-panel {
+    transform: translateY(20px) scale(0.98);
+  }
+  #tva-chat-root.is-open #tva-chat-panel {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  #tva-chat-panel,
+  #tva-chat-launcher,
+  .tva-msg-row,
+  .tva-quick-reply,
+  .tva-lead-card {
+    transition: opacity 0.15s !important;
+    animation: none !important;
+    transform: none !important;
+  }
+  #tva-chat-root.is-open #tva-chat-panel { opacity: 1; }
+  .tva-typing-dot { animation: tva-bounce 1.2s infinite ease-in-out; }
 }
