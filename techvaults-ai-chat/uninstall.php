@@ -1,40 +1,47 @@
 <?php
 /**
- * Runs when an admin clicks "Delete" on the plugin in wp-admin.
- * Only executes if WP_UNINSTALL_PLUGIN is defined — this guard is required.
+ * Runs when an admin clicks "Delete" on the Plugins screen.
+ * WP_UNINSTALL_PLUGIN must be defined — this guard is mandatory.
+ *
+ * We use Config::allOptionKeys() so the list of options to clean up
+ * is maintained in one place and automatically stays current.
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-global $wpdb;
+// Bootstrap the autoloader so we can use Config.
+require_once plugin_dir_path( __FILE__ ) . 'includes/Core/Autoloader.php';
+\TechVaults\Chat\Core\Autoloader::register();
 
-// Remove database tables.
-$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}tva_leads" );
-$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}tva_chat_events" );
-
-// Remove all plugin options.
-$options = [
-	'tva_chat_llm_api_key',
-	'tva_chat_llm_model',
-	'tva_chat_llm_provider',
-	'tva_chat_whatsapp_number',
-	'tva_chat_greeting',
-	'tva_chat_notify_email',
-	'tva_chat_db_version',
-];
-foreach ( $options as $option ) {
-	delete_option( $option );
+// ── Define constants (not set because this runs outside normal plugin load) ───
+if ( ! defined( 'TVC_PATH' ) ) {
+	define( 'TVC_PATH', plugin_dir_path( __FILE__ ) );
+}
+if ( ! defined( 'TVC_BASENAME' ) ) {
+	define( 'TVC_BASENAME', plugin_basename( __FILE__ ) );
 }
 
-// Remove all Knowledge Base posts and their meta.
-$kb_posts = get_posts( [
+global $wpdb;
+
+// ── Drop DB tables ────────────────────────────────────────────────────────────
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}tva_leads" );         // phpcs:ignore
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}tva_chat_events" );   // phpcs:ignore
+
+// ── Delete options ────────────────────────────────────────────────────────────
+foreach ( \TechVaults\Chat\Core\Config::allOptionKeys() as $key ) {
+	delete_option( $key );
+}
+
+// ── Delete all Knowledge Base CPT posts and their meta ───────────────────────
+$kbPosts = get_posts( [
 	'post_type'   => 'tva_kb_entry',
 	'post_status' => 'any',
 	'numberposts' => -1,
 	'fields'      => 'ids',
 ] );
-foreach ( $kb_posts as $post_id ) {
-	wp_delete_post( $post_id, true );
+
+foreach ( $kbPosts as $postId ) {
+	wp_delete_post( $postId, true );
 }
