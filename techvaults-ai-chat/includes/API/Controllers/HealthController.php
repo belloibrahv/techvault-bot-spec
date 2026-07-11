@@ -25,19 +25,25 @@ use TechVaults\Chat\KnowledgeBase\Repository as KBRepository;
 class HealthController {
 
 	public function handle( \WP_REST_Request $request ): \WP_REST_Response {
-		// Admin only — this endpoint reveals system state.
+		// Capability is enforced in permission_callback on the route — no
+		// redundant check needed here, but we leave this as defence-in-depth.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new \WP_REST_Response( [ 'error' => 'Unauthorized' ], 403 );
 		}
 
 		global $wpdb;
 
-		// ── 1. DB tables ──────────────────────────────────────────────────────
+		// ── 1. DB tables — use prepare() even though table names are trusted ──
 		$leadsTable  = $wpdb->prefix . 'tva_leads';
 		$eventsTable = $wpdb->prefix . 'tva_chat_events';
 
-		$leadsExists  = $wpdb->get_var( "SHOW TABLES LIKE '{$leadsTable}'" )  === $leadsTable;
-		$eventsExists = $wpdb->get_var( "SHOW TABLES LIKE '{$eventsTable}'" ) === $eventsTable;
+		$leadsExists  = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $leadsTable )
+		) === $leadsTable;
+
+		$eventsExists = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $eventsTable )
+		) === $eventsTable;
 
 		// ── 2. KB entry count ─────────────────────────────────────────────────
 		$kbCount = count( ( new KBRepository() )->findAll() );

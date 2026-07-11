@@ -53,11 +53,11 @@ class Routes {
 			'permission_callback' => '__return_true',
 		] );
 
-		// ── Health check (admin only) ─────────────────────────────────────────
+		// ── Health check (admin only — auth enforced in permission_callback) ────
 		register_rest_route( self::NAMESPACE, '/health', [
 			'methods'             => \WP_REST_Server::READABLE,
 			'callback'            => [ $health, 'handle' ],
-			'permission_callback' => '__return_true', // Auth enforced inside handle().
+			'permission_callback' => static fn() => current_user_can( 'manage_options' ),
 		] );
 	}
 }

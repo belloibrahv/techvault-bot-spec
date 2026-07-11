@@ -30,6 +30,11 @@ class LeadController {
 			return new \WP_REST_Response( [ 'error' => 'invalid_nonce' ], 403 );
 		}
 
+		// ── Rate limit (stricter for leads — prevents notification spam) ────────
+		if ( $this->guard->isLeadRateLimited( $this->guard->clientIp() ) ) {
+			return new \WP_REST_Response( [ 'error' => 'rate_limited' ], 429 );
+		}
+
 		$params = $request->get_json_params();
 
 		$leadId = $this->leads->save( [

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" aria-label="TechVaults AI Assistant" role="img">
+  <!-- Outer head shape / helmet -->
+  <ellipse cx="50" cy="52" rx="36" ry="38" fill="#c8cdd8" stroke="#1a1a2e" stroke-width="2.5"/>
+
+  <!-- Inner face plate (rounded square) -->
+  <rect x="22" y="28" width="56" height="48" rx="14" ry="14" fill="#e8ecf4" stroke="#1a1a2e" stroke-width="2"/>
+
+  <!-- Top visor / dark panel -->
+  <rect x="36" y="14" width="28" height="14" rx="5" ry="5" fill="#3a3f5c" stroke="#1a1a2e" stroke-width="2"/>
+  <!-- Visor connects to head -->
+  <rect x="42" y="24" width="16" height="6" rx="2" fill="#3a3f5c"/>
+
+  <!-- Left ear / side piece -->
+  <ellipse cx="16" cy="54" rx="6" ry="9" fill="#b0b6c8" stroke="#1a1a2e" stroke-width="2"/>
+  <!-- Right ear / side piece -->
+  <ellipse cx="84" cy="54" rx="6" ry="9" fill="#b0b6c8" stroke="#1a1a2e" stroke-width="2"/>
+
+  <!-- Antenna stem -->
+  <line x1="50" y1="14" x2="38" y2="4" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round"/>
+  <!-- Antenna ball -->
+  <circle cx="36" cy="3" r="4" fill="#5ab4e8" stroke="#1a1a2e" stroke-width="1.5"/>
+
+  <!-- Left eyebrow arch -->
+  <path d="M30 38 Q35 34 40 38" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Right eyebrow arch -->
+  <path d="M60 38 Q65 34 70 38" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <!-- Left eye (outer) -->
+  <circle cx="36" cy="47" r="8" fill="#1a1a2e"/>
+  <!-- Left eye highlight -->
+  <circle cx="38.5" cy="44.5" r="2.5" fill="#ffffff" opacity="0.9"/>
+
+  <!-- Right eye (outer) -->
+  <circle cx="64" cy="47" r="8" fill="#1a1a2e"/>
+  <!-- Right eye highlight -->
+  <circle cx="66.5" cy="44.5" r="2.5" fill="#ffffff" opacity="0.9"/>
+
+  <!-- Smile -->
+  <path d="M40 62 Q50 70 60 62" stroke="#1a1a2e" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Microphone / chin piece -->
+  <rect x="44" y="74" width="12" height="7" rx="3.5" fill="#5ab4e8" stroke="#1a1a2e" stroke-width="1.5"/>
+  <!-- Mic stem -->
+  <line x1="50" y1="74" x2="50" y2="71" stroke="#1a1a2e" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

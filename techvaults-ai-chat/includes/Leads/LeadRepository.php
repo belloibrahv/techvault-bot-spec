@@ -63,18 +63,27 @@ class LeadRepository {
 	// ── Private ───────────────────────────────────────────────────────────────
 
 	private function notify( array $data ): void {
-		$to      = Config::notifyEmail();
-		$name    = ! empty( $data['name'] ) ? $data['name'] : 'Unnamed visitor';
-		$subject = "[TechVaults] New chatbot lead: {$name}";
+		$to = Config::notifyEmail();
 
-		$body = "A new lead was captured via the TechVaults website chatbot.\n\n"
-			. "Name:           {$data['name']}\n"
-			. "Phone:          {$data['phone']}\n"
-			. "Email:          {$data['email']}\n"
-			. "Need:           {$data['stated_need']}\n"
-			. "Preferred time: {$data['preferred_time']}\n"
-			. "Page:           {$data['source_url']}\n\n"
-			. "Log in to wp-admin → TechVaults Chat → Leads to view and follow up.\n";
+		// Strip CRLF from any field that appears in email headers — prevents
+		// header injection (RFC 5321 §4.1.1.1).
+		$name = str_replace( [ "\r", "\n", "\0" ], '', $data['name'] ?? '' );
+		$name = $name ?: 'Unnamed visitor';
+
+		// Subject: sanitize then cap length — no user HTML, no header injection.
+		$subject = sanitize_text_field( "[TechVaults] New chatbot lead: {$name}" );
+		$subject = mb_substr( $subject, 0, 200 );
+
+		// Body is plain-text — escape special chars for email safety but do NOT
+		// use HTML because wp_mail defaults to text/plain.
+		$body = "A new lead was captured via the TechVaults website chatbot.\r\n\r\n"
+			. "Name:           " . sanitize_text_field( $data['name']          ?? '' ) . "\r\n"
+			. "Phone:          " . sanitize_text_field( $data['phone']         ?? '' ) . "\r\n"
+			. "Email:          " . sanitize_email(      $data['email']         ?? '' ) . "\r\n"
+			. "Need:           " . sanitize_text_field( $data['stated_need']   ?? '' ) . "\r\n"
+			. "Preferred time: " . sanitize_text_field( $data['preferred_time'] ?? '' ) . "\r\n"
+			. "Page:           " . esc_url_raw(         $data['source_url']    ?? '' ) . "\r\n\r\n"
+			. "Log in to wp-admin → TechVaults Chat → Leads to view and follow up.\r\n";
 
 		$sent = wp_mail( $to, $subject, $body );
 

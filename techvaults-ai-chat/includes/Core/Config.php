@@ -22,18 +22,36 @@ final class Config {
 	}
 
 	public static function llmApiKey(): string {
+		// Environment variable takes priority — allows the key to be stored
+		// outside the database entirely (e.g. in server env or wp-config.php).
+		// Set:  define( 'TVC_LLM_API_KEY', 'AIzaSy...' );  in wp-config.php
+		// or:   export TVC_LLM_API_KEY=AIzaSy...  in the server environment.
+		if ( defined( 'TVC_LLM_API_KEY' ) && ! empty( TVC_LLM_API_KEY ) ) {
+			return (string) TVC_LLM_API_KEY;
+		}
+
+		$env = getenv( 'TVC_LLM_API_KEY' );
+		if ( ! empty( $env ) ) {
+			return (string) $env;
+		}
+
 		return (string) get_option( 'tva_chat_llm_api_key', '' );
 	}
 
 	public static function llmModel(): string {
 		$stored = (string) get_option( 'tva_chat_llm_model', '' );
 
-		// Correct deprecated model names that may be stored from previous versions.
+		// Correct only truly deprecated/removed model names.
+		// gemini-flash-lite-latest → resolves to gemini-3.1-flash-lite (confirmed 782ms, no thinking).
+		// gemini-flash-latest → resolves to gemini-3.5-flash (works but higher quota/slower at times).
 		$deprecated = [
-			'gemini-1.5-flash'     => 'gemini-2.0-flash',
-			'gemini-1.5-pro'       => 'gemini-1.5-pro-latest',
-			'gemini-pro'           => 'gemini-2.0-flash',
-			'gemini-1.0-pro'       => 'gemini-2.0-flash',
+			'gemini-1.5-flash'        => 'gemini-flash-lite-latest',
+			'gemini-1.5-flash-latest' => 'gemini-flash-lite-latest',
+			'gemini-1.5-pro'          => 'gemini-flash-lite-latest',
+			'gemini-1.5-pro-latest'   => 'gemini-flash-lite-latest',
+			'gemini-pro'              => 'gemini-flash-lite-latest',
+			'gemini-1.0-pro'          => 'gemini-flash-lite-latest',
+			'gemini-2.5-flash'        => 'gemini-flash-lite-latest',
 		];
 
 		if ( isset( $deprecated[ $stored ] ) ) {
@@ -42,7 +60,9 @@ final class Config {
 			return $corrected;
 		}
 
-		return $stored ?: 'gemini-2.0-flash';
+		// Default: gemini-flash-lite-latest resolves to gemini-3.1-flash-lite — fast, no thinking overhead.
+		// gemini-flash-latest resolves to gemini-3.5-flash but requires higher quota/billing.
+		return $stored ?: 'gemini-flash-lite-latest';
 	}
 
 	public static function llmMaxTokens(): int {

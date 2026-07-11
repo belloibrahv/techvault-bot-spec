@@ -16,6 +16,7 @@ namespace TechVaults\Chat\Core;
 
 use TechVaults\Chat\Admin\AdminServiceProvider;
 use TechVaults\Chat\API\ApiServiceProvider;
+use TechVaults\Chat\Database\KBSeeder;
 use TechVaults\Chat\KnowledgeBase\KnowledgeBaseServiceProvider;
 use TechVaults\Chat\Widget\WidgetServiceProvider;
 
@@ -62,6 +63,11 @@ final class Plugin {
 		$this->addProvider( new ApiServiceProvider() );
 		$this->addProvider( new AdminServiceProvider() );
 		$this->addProvider( new WidgetServiceProvider() );
+
+		// Register the KB seeder admin-post action (admin only).
+		if ( is_admin() ) {
+			KBSeeder::registerAdminAction();
+		}
 	}
 
 	private function addProvider( ServiceProviderInterface $provider ): void {

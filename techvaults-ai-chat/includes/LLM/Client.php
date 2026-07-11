@@ -16,6 +16,7 @@ namespace TechVaults\Chat\LLM;
 use TechVaults\Chat\Core\Config;
 use TechVaults\Chat\Core\Logger;
 use TechVaults\Chat\LLM\Providers\GeminiProvider;
+use TechVaults\Chat\LLM\Providers\AgentRouterProvider;
 
 class Client {
 
@@ -40,6 +41,9 @@ class Client {
 		switch ( $slug ) {
 			case 'gemini':
 				return new GeminiProvider();
+
+			case 'agentrouter':
+				return new AgentRouterProvider();
 
 			// Uncomment as providers are implemented:
 			// case 'claude':

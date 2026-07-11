@@ -19,27 +19,28 @@ class WidgetServiceProvider implements ServiceProviderInterface {
 	public function boot(): void {}
 
 	public function enqueue(): void {
-		// ── Google Fonts: Google Sans + Material Symbols Rounded ──────────────
-		// Single request via the combined API — both families, display=swap for
-		// performance, preconnect hints added below.
+		// ── Google Sans only — no icon font loaded globally ───────────────────
+		// Material Symbols is NOT enqueued because it rewrites icon font stacks
+		// site-wide and breaks themes that use Font Awesome, Dashicons, etc.
+		// The widget uses inline SVGs for all icons, so no icon font is needed.
 		wp_enqueue_style(
-			'tva-google-fonts',
-			'https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=swap',
+			'tva-google-sans',
+			'https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap',
 			[],
-			null // External CDN — no version hash.
+			null
 		);
 
-		// Preconnect hints so the font CDN handshake happens earlier.
+		// Preconnect hint for the font CDN (performance only).
 		add_action( 'wp_head', static function () {
 			echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
 			echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
 		}, 1 );
 
-		// ── Widget CSS (depends on Google Fonts) ──────────────────────────────
+		// ── Widget CSS ────────────────────────────────────────────────────────
 		wp_enqueue_style(
 			'tva-chat-widget',
 			TVC_URL . 'assets/css/tva-chat-widget.css',
-			[ 'tva-google-fonts' ],
+			[ 'tva-google-sans' ],
 			TVC_VERSION
 		);
 

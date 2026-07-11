@@ -45,13 +45,13 @@ final class Logger {
 	// ── Internal ──────────────────────────────────────────────────────────────
 
 	private static function write( string $level, string $message, array $context ): void {
-		$prefix  = '[TechVaults Chat]';
-		$entry   = sprintf( '%s [%s] %s', $prefix, $level, $message );
+		$prefix = '[TechVaults Chat]';
+		$entry  = sprintf( '%s [%s] %s', $prefix, $level, $message );
 
 		if ( ! empty( $context ) ) {
-			// Redact any key that looks like it could hold a secret.
-			$safe    = self::redact( $context );
-			$entry  .= ' | ' . wp_json_encode( $safe );
+			$safe   = self::redact( $context );
+			$safe   = self::truncate( $safe );
+			$entry .= ' | ' . wp_json_encode( $safe );
 		}
 
 		error_log( $entry ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -64,7 +64,7 @@ final class Logger {
 	 * @return array<string, mixed>
 	 */
 	private static function redact( array $context ): array {
-		$sensitive = [ 'api_key', 'key', 'token', 'secret', 'password', 'auth' ];
+		$sensitive = [ 'api_key', 'key', 'token', 'secret', 'password', 'auth', 'nonce' ];
 
 		foreach ( $context as $k => $v ) {
 			foreach ( $sensitive as $word ) {
@@ -75,6 +75,21 @@ final class Logger {
 			}
 		}
 
+		return $context;
+	}
+
+	/**
+	 * Truncate string context values to prevent log flooding.
+	 *
+	 * @param array<string, mixed> $context
+	 * @return array<string, mixed>
+	 */
+	private static function truncate( array $context, int $max = 200 ): array {
+		foreach ( $context as $k => $v ) {
+			if ( is_string( $v ) && mb_strlen( $v ) > $max ) {
+				$context[ $k ] = mb_substr( $v, 0, $max ) . '…[truncated]';
+			}
+		}
 		return $context;
 	}
 }

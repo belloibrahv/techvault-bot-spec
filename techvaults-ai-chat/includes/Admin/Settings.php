@@ -40,13 +40,45 @@ class Settings {
 		<div class="wrap">
 			<h1><?php esc_html_e( 'TechVaults Chat — Settings', 'tva-chat' ); ?></h1>
 
+			<?php
+			// Only show the seeded notice when the value came from our own
+			// admin-post redirect — verify the referring action via a transient
+			// rather than trusting a raw GET parameter anyone could craft.
+			$seeded_count = get_transient( 'tva_kb_seeded_' . get_current_user_id() );
+			if ( $seeded_count !== false ) {
+				delete_transient( 'tva_kb_seeded_' . get_current_user_id() );
+				?>
+				<div class="notice notice-success is-dismissible">
+					<p>
+						<?php
+						$seeded = (int) $seeded_count;
+						if ( $seeded > 0 ) {
+							printf(
+								esc_html__( '✓ Knowledge Base seeded! %d entries added. The chatbot can now answer detailed questions about TechVaults.', 'tva-chat' ),
+								$seeded
+							);
+						} else {
+							esc_html_e( 'Knowledge Base already up to date — no new entries were needed.', 'tva-chat' );
+						}
+						?>
+					</p>
+				</div>
+				<?php
+			}
+			?>
+
 			<?php if ( (int) $kbCount === 0 ) : ?>
 				<div class="notice notice-error">
 					<p>
 						<strong><?php esc_html_e( 'Knowledge Base is empty.', 'tva-chat' ); ?></strong>
-						<?php esc_html_e( 'The chatbot cannot answer questions until you add KB entries.', 'tva-chat' ); ?>
+						<?php esc_html_e( 'The chatbot will use general knowledge only until you add KB entries.', 'tva-chat' ); ?>
 						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=tva_kb_entry' ) ); ?>">
-							<?php esc_html_e( 'Add your first entry →', 'tva-chat' ); ?>
+							<?php esc_html_e( 'Add an entry manually →', 'tva-chat' ); ?>
+						</a>
+						&nbsp;|&nbsp;
+						<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=tva_seed_kb' ), 'tva_seed_kb' ) ); ?>"
+						   style="font-weight:600;color:#bc0004;">
+							<?php esc_html_e( '⚡ Auto-seed with TechVaults content →', 'tva-chat' ); ?>
 						</a>
 					</p>
 				</div>
@@ -59,6 +91,10 @@ class Settings {
 							(int) $kbCount
 						);
 						?>
+						&nbsp;
+						<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=tva_seed_kb' ), 'tva_seed_kb' ) ); ?>">
+							<?php esc_html_e( '⚡ Auto-seed with TechVaults content →', 'tva-chat' ); ?>
+						</a>
 					</p>
 				</div>
 			<?php else : ?>
@@ -85,11 +121,14 @@ class Settings {
 						<td>
 							<select id="tva_llm_provider" name="tva_chat_llm_provider">
 								<option value="gemini" <?php selected( Config::llmProvider(), 'gemini' ); ?>>
-									Google Gemini
+									Google Gemini (direct)
+								</option>
+								<option value="agentrouter" <?php selected( Config::llmProvider(), 'agentrouter' ); ?>>
+									AgentRouter (OpenAI-compatible gateway)
 								</option>
 							</select>
 							<p class="description">
-								<?php esc_html_e( 'AI provider for chat responses. More providers can be added in future releases.', 'tva-chat' ); ?>
+								<?php esc_html_e( 'AgentRouter is an OpenAI-compatible proxy giving access to Gemini, Claude, GPT, DeepSeek and more via a single API key.', 'tva-chat' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -108,7 +147,13 @@ class Settings {
 								autocomplete="new-password"
 							/>
 							<p class="description">
-								<?php esc_html_e( 'Your Gemini API key from Google AI Studio. Never share this or commit it to version control.', 'tva-chat' ); ?>
+								<?php
+								if ( Config::llmProvider() === 'agentrouter' ) {
+									esc_html_e( 'Your AgentRouter API key (sk-...) from agentrouter.org/console/token. Never share or commit this.', 'tva-chat' );
+								} else {
+									esc_html_e( 'Your Gemini API key from Google AI Studio. Never share this or commit it to version control.', 'tva-chat' );
+								}
+								?>
 							</p>
 						</td>
 					</tr>
@@ -119,15 +164,30 @@ class Settings {
 						</th>
 						<td>
 							<?php
-							$current_model = Config::llmModel();
-							$models = [
-								'gemini-2.0-flash'        => 'Gemini 2.0 Flash (recommended — fast, free tier)',
-								'gemini-2.0-flash-lite'   => 'Gemini 2.0 Flash Lite (fastest, lowest cost)',
-								'gemini-1.5-flash-latest' => 'Gemini 1.5 Flash Latest',
-								'gemini-1.5-pro-latest'   => 'Gemini 1.5 Pro Latest (slower, more capable)',
+							$current_model    = Config::llmModel();
+							$current_provider = Config::llmProvider();
+
+							$gemini_models = [
+								'gemini-flash-lite-latest' => 'Gemini 3.1 Flash Lite — fast, recommended ✓',
+								'gemini-flash-latest'      => 'Gemini 3.5 Flash — latest (higher quota needed)',
+								'gemini-2.0-flash'         => 'Gemini 2.0 Flash (older keys)',
+								'gemini-2.5-flash'         => 'Gemini 2.5 Flash (older keys only)',
 							];
+
+							$agentrouter_models = [
+								'gemini-2.0-pro'               => 'Gemini 2.0 Pro (via AgentRouter)',
+								'gemini-2.5-flash'             => 'Gemini 2.5 Flash (via AgentRouter)',
+								'claude-sonnet-4-5-20250929'   => 'Claude Sonnet 4.5 (via AgentRouter)',
+								'claude-haiku-3-5-20241022'    => 'Claude Haiku 3.5 — fast & cheap (via AgentRouter)',
+								'gpt-4o'                       => 'GPT-4o (via AgentRouter)',
+								'gpt-4o-mini'                  => 'GPT-4o Mini — cost-efficient (via AgentRouter)',
+								'deepseek-r1'                  => 'DeepSeek R1 — near-free (via AgentRouter)',
+								'glm-4.5-air'                  => 'GLM-4.5 Air — FREE (via AgentRouter)',
+							];
+
+							$models = $current_provider === 'agentrouter' ? $agentrouter_models : $gemini_models;
 							?>
-							<select id="tva_llm_model" name="tva_chat_llm_model" style="width:400px">
+							<select id="tva_llm_model" name="tva_chat_llm_model" style="width:420px">
 								<?php foreach ( $models as $value => $label ) : ?>
 									<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current_model, $value ); ?>>
 										<?php echo esc_html( $label ); ?>
@@ -135,7 +195,13 @@ class Settings {
 								<?php endforeach; ?>
 							</select>
 							<p class="description">
-								<?php esc_html_e( 'gemini-2.0-flash is the recommended default — fast responses, generous free quota.', 'tva-chat' ); ?>
+								<?php
+								if ( $current_provider === 'agentrouter' ) {
+									esc_html_e( 'Using AgentRouter: change provider first to switch between model families. gemini-2.0-pro is recommended for chat quality.', 'tva-chat' );
+								} else {
+									esc_html_e( 'gemini-flash-latest is recommended — it resolves to Gemini 3.5 Flash on new API keys. Use gemini-2.0-flash for older keys.', 'tva-chat' );
+								}
+								?>
 							</p>
 						</td>
 					</tr>
