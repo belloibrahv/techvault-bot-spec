@@ -26,9 +26,9 @@ class LeadController {
 	}
 
 	public function handle( \WP_REST_Request $request ): \WP_REST_Response {
-		if ( ! $this->guard->nonceIsValid( $request ) ) {
-			return new \WP_REST_Response( [ 'error' => 'invalid_nonce' ], 403 );
-		}
+		// Nonce validation is bypassed for public-facing endpoints to prevent caching plugins
+		// from breaking the widget for guest users (due to expired nonces in cached HTML).
+		// Spam is prevented via the strict IP-based rate limiter below.
 
 		// ── Rate limit (stricter for leads — prevents notification spam) ────────
 		if ( $this->guard->isLeadRateLimited( $this->guard->clientIp() ) ) {

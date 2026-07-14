@@ -39,10 +39,9 @@ class ChatController {
 	}
 
 	public function handle( \WP_REST_Request $request ): \WP_REST_Response {
-		// ── 1. CSRF / nonce ───────────────────────────────────────────────────
-		if ( ! $this->guard->nonceIsValid( $request ) ) {
-			return new \WP_REST_Response( [ 'error' => 'invalid_nonce' ], 403 );
-		}
+		// Nonce validation is bypassed for public-facing endpoints to prevent caching plugins
+		// from breaking the widget for guest users (due to expired nonces in cached HTML).
+		// Abuse is prevented via the IP-based rate limiter below.
 
 		// ── 2. Rate limit ─────────────────────────────────────────────────────
 		if ( $this->guard->isRateLimited( $this->guard->clientIp() ) ) {
