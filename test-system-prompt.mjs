@@ -3,7 +3,11 @@
  * Run: node test-system-prompt.mjs
  */
 
-const API_KEY = 'AIzaSyA54enqF4XyEP9yv1Ikhj_lEdkSfDHTje0';
+const API_KEY = process.env.GEMINI_API_KEY || 'PASTE_YOUR_KEY_HERE';
+if (API_KEY === 'PASTE_YOUR_KEY_HERE') {
+  console.error('ERROR: Set your API key first:\n  GEMINI_API_KEY=AIzaSy... node test-system-prompt.mjs');
+  process.exit(1);
+}
 const MODEL   = 'gemini-flash-lite-latest';
 const BASE    = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
